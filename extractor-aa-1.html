@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Extractor AA</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: #0f1117;
+    color: #e2e8f0;
+    font-family: 'Courier New', monospace;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+
+  .card {
+    background: #1a1d27;
+    border: 1px solid #2a2f42;
+    border-radius: 12px;
+    padding: 32px;
+    width: 100%;
+    max-width: 560px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  }
+
+  .title {
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #3d5afe;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .title::before {
+    content: '';
+    display: inline-block;
+    width: 8px; height: 8px;
+    background: #3d5afe;
+    border-radius: 50%;
+  }
+
+  .label {
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: #5a6480;
+    margin-bottom: 8px;
+  }
+
+  textarea {
+    width: 100%;
+    background: #0f1117;
+    border: 1px solid #2a2f42;
+    border-radius: 8px;
+    color: #8892b0;
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    padding: 14px;
+    resize: vertical;
+    min-height: 110px;
+    outline: none;
+    transition: border-color 0.2s;
+    line-height: 1.6;
+  }
+  textarea:focus { border-color: #3d5afe; }
+  textarea::placeholder { color: #3a3f55; }
+
+  .btn-row {
+    margin-top: 14px;
+    display: flex;
+    gap: 10px;
+  }
+
+  .btn {
+    flex: 1;
+    padding: 12px;
+    background: #3d5afe;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.1s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+  }
+  .btn:hover { background: #536dfe; }
+  .btn:active { transform: scale(0.98); }
+
+  .btn-cam {
+    flex: 0 0 auto;
+    padding: 12px 16px;
+    background: #1e2235;
+    border: 1px solid #3d5afe;
+    color: #3d5afe;
+    border-radius: 8px;
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.1s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .btn-cam:hover { background: #252a40; }
+  .btn-cam:active { transform: scale(0.98); }
+
+  /* Modal cámara */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.85);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+  }
+  .modal-overlay.active { display: flex; }
+
+  .modal {
+    background: #1a1d27;
+    border: 1px solid #2a2f42;
+    border-radius: 14px;
+    padding: 24px;
+    width: 92%;
+    max-width: 420px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .modal-title {
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #3d5afe;
+  }
+
+  #qr-video {
+    width: 100%;
+    border-radius: 8px;
+    border: 1px solid #2a2f42;
+    background: #000;
+    aspect-ratio: 1;
+    object-fit: cover;
+  }
+
+  .scan-status {
+    font-size: 12px;
+    color: #5a6480;
+    text-align: center;
+    min-height: 18px;
+  }
+  .scan-status.ok { color: #00e676; }
+  .scan-status.err { color: #ef9a9a; }
+
+  .btn-cerrar {
+    padding: 10px;
+    background: none;
+    border: 1px solid #3a3f55;
+    border-radius: 8px;
+    color: #5a6480;
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .btn-cerrar:hover { border-color: #f44336; color: #f44336; }
+
+  .divider {
+    margin: 24px 0;
+    border: none;
+    border-top: 1px solid #2a2f42;
+  }
+
+  /* Resultado */
+  .result-box {
+    background: #0f1117;
+    border: 1px solid #2a2f42;
+    border-radius: 8px;
+    padding: 14px 16px;
+    min-height: 52px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    transition: border-color 0.2s;
+  }
+  .result-box.found { border-color: #00c853; }
+  .result-box.error { border-color: #f44336; }
+
+  .result-value {
+    font-size: 18px;
+    font-weight: bold;
+    letter-spacing: 0.04em;
+    color: #00e676;
+    word-break: break-all;
+    flex: 1;
+  }
+  .result-value.placeholder { font-size: 12px; color: #3a3f55; font-weight: normal; }
+  .result-value.error-msg { color: #ef9a9a; font-size: 13px; font-weight: normal; }
+
+  .copy-btn {
+    background: none;
+    border: 1px solid #2a2f42;
+    border-radius: 6px;
+    color: #5a6480;
+    padding: 6px 10px;
+    font-size: 11px;
+    font-family: 'Courier New', monospace;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+  .copy-btn:hover { border-color: #3d5afe; color: #3d5afe; }
+  .copy-btn.copied { border-color: #00c853; color: #00c853; }
+
+  .multiple-results {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+  }
+
+  .result-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #0d1020;
+    border-radius: 6px;
+    padding: 8px 12px;
+  }
+  .row-index { font-size: 10px; color: #3d5afe; width: 18px; flex-shrink: 0; }
+  .row-value { font-size: 14px; color: #00e676; letter-spacing: 0.03em; flex: 1; word-break: break-all; }
+  .row-copy {
+    background: none;
+    border: 1px solid #2a2f42;
+    border-radius: 5px;
+    color: #5a6480;
+    padding: 4px 8px;
+    font-size: 10px;
+    font-family: 'Courier New', monospace;
+    cursor: pointer;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+  .row-copy:hover { border-color: #3d5afe; color: #3d5afe; }
+  .row-copy.copied { border-color: #00c853; color: #00c853; }
+
+  /* Barra copiar todo */
+  .copy-all-bar {
+    display: none;
+    margin-top: 12px;
+    background: #0d1020;
+    border: 1px solid #00c853;
+    border-radius: 8px;
+    padding: 10px 14px;
+    align-items: center;
+    gap: 10px;
+  }
+  .copy-all-bar.visible { display: flex; }
+  .copy-all-val {
+    flex: 1;
+    font-size: 13px;
+    color: #00e676;
+    word-break: break-all;
+    letter-spacing: 0.03em;
+  }
+  .copy-all-btn {
+    background: #00c853;
+    border: none;
+    border-radius: 6px;
+    color: #0f1117;
+    padding: 6px 12px;
+    font-size: 11px;
+    font-family: 'Courier New', monospace;
+    font-weight: bold;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.15s;
+    flex-shrink: 0;
+  }
+  .copy-all-btn:hover { background: #69f0ae; }
+  .copy-all-btn.copied { background: #69f0ae; }
+
+  .copy-all-label {
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #5a6480;
+    margin-top: 14px;
+    margin-bottom: 6px;
+  }
+</style>
+</head>
+<body>
+
+<!-- Modal cámara QR -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <div class="modal-title">📷 Escanear código</div>
+    <video id="qr-video" autoplay playsinline muted></video>
+    <canvas id="qr-canvas" style="display:none"></canvas>
+    <div class="scan-status" id="scanStatus">Apuntá la cámara al código...</div>
+    <button class="btn-cerrar" onclick="cerrarCamara()">Cerrar cámara</button>
+  </div>
+</div>
+
+<div class="card">
+  <div class="title">Extractor de código &lt;AA&gt;</div>
+
+  <div class="label">Código SCE</div>
+  <textarea id="input" placeholder="&lt;AA&gt;2025225955487624078&lt;AA&gt;&lt;GT&gt;5000456070935&lt;GT&gt;...&#10;Podés pegar múltiples líneas o escanear con la cámara"></textarea>
+
+  <div class="btn-row">
+    <button class="btn" onclick="extraer()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      Extraer
+    </button>
+    <button class="btn-cam" onclick="abrirCamara()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+      Cámara
+    </button>
+  </div>
+
+  <hr class="divider">
+
+  <div class="label">Resultado</div>
+  <div class="result-box" id="resultBox">
+    <span class="result-value placeholder" id="resultVal">—</span>
+  </div>
+
+  <!-- Barra "Copiar todo" (visible solo con múltiples resultados) -->
+  <div class="copy-all-label" id="copyAllLabel" style="display:none">Copiar todo junto</div>
+  <div class="copy-all-bar" id="copyAllBar">
+    <span class="copy-all-val" id="copyAllVal"></span>
+    <button class="copy-all-btn" id="copyAllBtn" onclick="copiarTodo()">Copiar todo</button>
+  </div>
+</div>
+
+<!-- jsQR desde CDN -->
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+<script>
+
+// ─── EXTRACCIÓN ───────────────────────────────────────────────────────────────
+
+let allValues = [];
+
+function extraer(extraInput) {
+  const raw = extraInput !== undefined ? extraInput : document.getElementById('input').value.trim();
+  const box = document.getElementById('resultBox');
+  const resultVal = document.getElementById('resultVal');
+  const copyAllBar = document.getElementById('copyAllBar');
+  const copyAllLabel = document.getElementById('copyAllLabel');
+
+  box.className = 'result-box';
+  copyAllBar.className = 'copy-all-bar';
+  copyAllLabel.style.display = 'none';
+  allValues = [];
+
+  if (!raw) {
+    box.className = 'result-box error';
+    resultVal.className = 'result-value error-msg';
+    resultVal.innerHTML = 'Pegá un código primero.';
+    return;
+  }
+
+  const matches = [...raw.matchAll(/<AA>([^<]+)<AA>/gi)];
+
+  if (matches.length === 0) {
+    box.className = 'result-box error';
+    resultVal.className = 'result-value error-msg';
+    resultVal.innerHTML = 'No se encontró ningún valor &lt;AA&gt;.';
+    return;
+  }
+
+  allValues = matches.map(m => m[1].trim());
+  box.className = 'result-box found';
+
+  if (allValues.length === 1) {
+    const val = allValues[0];
+    resultVal.className = 'result-value';
+    resultVal.innerHTML = `${val} <button class="copy-btn" id="mainCopy" onclick="copiar('${val}', 'mainCopy')">Copiar</button>`;
+  } else {
+    resultVal.className = '';
+    let html = '<div class="multiple-results">';
+    allValues.forEach((val, i) => {
+      html += `<div class="result-row">
+        <span class="row-index">${i+1}</span>
+        <span class="row-value">${val}</span>
+        <button class="row-copy" id="rc${i}" onclick="copiar('${val}','rc${i}')">Copiar</button>
+      </div>`;
+    });
+    html += '</div>';
+    resultVal.innerHTML = html;
+
+    // Mostrar barra "Copiar todo" con O entre valores
+    const joined = allValues.join(' O ');
+    document.getElementById('copyAllVal').textContent = joined;
+    copyAllBar.className = 'copy-all-bar visible';
+    copyAllLabel.style.display = 'block';
+  }
+}
+
+function copiar(val, btnId) {
+  navigator.clipboard.writeText(val).then(() => {
+    const btn = document.getElementById(btnId);
+    if (btn) {
+      const orig = btn.textContent;
+      btn.textContent = '✓ Copiado';
+      btn.classList.add('copied');
+      setTimeout(() => { btn.textContent = orig; btn.classList.remove('copied'); }, 1800);
+    }
+  });
+}
+
+function copiarTodo() {
+  const joined = allValues.join(' O ');
+  navigator.clipboard.writeText(joined).then(() => {
+    const btn = document.getElementById('copyAllBtn');
+    btn.textContent = '✓ Copiado';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'Copiar todo'; btn.classList.remove('copied'); }, 1800);
+  });
+}
+
+document.getElementById('input').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); extraer(); }
+});
+
+
+// ─── CÁMARA QR ────────────────────────────────────────────────────────────────
+
+let stream = null;
+let scanInterval = null;
+let scannedCodes = new Set();
+
+async function abrirCamara() {
+  const overlay = document.getElementById('modalOverlay');
+  const video = document.getElementById('qr-video');
+  const status = document.getElementById('scanStatus');
+
+  status.className = 'scan-status';
+  status.textContent = 'Iniciando cámara...';
+  overlay.classList.add('active');
+
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }
+    });
+    video.srcObject = stream;
+    status.textContent = 'Apuntá la cámara al código...';
+    iniciarScan();
+  } catch(e) {
+    status.className = 'scan-status err';
+    status.textContent = 'No se pudo acceder a la cámara: ' + e.message;
+  }
+}
+
+function iniciarScan() {
+  const video = document.getElementById('qr-video');
+  const canvas = document.getElementById('qr-canvas');
+  const ctx = canvas.getContext('2d');
+  const status = document.getElementById('scanStatus');
+
+  scanInterval = setInterval(() => {
+    if (video.readyState !== video.HAVE_ENOUGH_DATA) return;
+
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const code = jsQR(imageData.data, imageData.width, imageData.height, {
+      inversionAttempts: 'dontInvert'
+    });
+
+    if (code && code.data && !scannedCodes.has(code.data)) {
+      scannedCodes.add(code.data);
+
+      // Agregar al textarea
+      const ta = document.getElementById('input');
+      ta.value = ta.value ? ta.value + '\n' + code.data : code.data;
+
+      status.className = 'scan-status ok';
+      status.textContent = '✓ Escaneado — seguí escaneando o cerrá';
+
+      // Flash visual
+      video.style.outline = '3px solid #00e676';
+      setTimeout(() => { video.style.outline = 'none'; }, 400);
+
+      // Auto-extraer
+      extraer(ta.value.trim());
+    }
+  }, 200);
+}
+
+function cerrarCamara() {
+  clearInterval(scanInterval);
+  scanInterval = null;
+  if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
+  scannedCodes.clear();
+  document.getElementById('modalOverlay').classList.remove('active');
+  document.getElementById('qr-video').srcObject = null;
+  document.getElementById('scanStatus').className = 'scan-status';
+}
+
+// Cerrar con Escape
+document.addEventListener('keydown', e => { if (e.key === 'Escape') cerrarCamara(); });
+
+</script>
+</body>
+</html>
