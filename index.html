@@ -396,6 +396,13 @@
     </div>
     <canvas id="qr-canvas" style="display:none"></canvas>
     <div class="scan-status" id="scanStatus">Apuntá la cámara al código...</div>
+   <button id="btnLinterna" onclick="toggleLinterna()" style="
+  background:#fff; border:2px solid #d71920; border-radius:8px;
+  color:#d71920; font-family:'Segoe UI',Arial,sans-serif; font-weight:600;
+  font-size:13px; padding:8px 16px; cursor:pointer; display:flex;
+  align-items:center; gap:6px; width:100%; justify-content:center;">
+  🔦 Activar linterna
+   </button>
     <button class="btn-cerrar" onclick="cerrarCamara()">Cerrar cámara</button>
   </div>
 </div>
@@ -580,6 +587,21 @@ function iniciarScan() {
       extraer(ta.value.trim());
     }
   }, 200);
+}
+ 
+ let linternaActiva = false;
+
+async function toggleLinterna() {
+  if (!stream) return;
+  const track = stream.getVideoTracks()[0];
+  linternaActiva = !linternaActiva;
+  try {
+    await track.applyConstraints({ advanced: [{ torch: linternaActiva }] });
+    document.getElementById('btnLinterna').textContent = linternaActiva ? '🔦 Apagar linterna' : '🔦 Activar linterna';
+  } catch(e) {
+    alert('Tu dispositivo no soporta control de linterna.');
+    linternaActiva = false;
+  }
 }
 
 function cerrarCamara() {
