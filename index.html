@@ -388,14 +388,13 @@
 
   /* Tick animado */
   .tick-overlay {
-    position: fixed;
-    inset: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    pointer-events: none;
-    z-index: 999;
-  }
+  position: fixed;
+  pointer-events: none;
+  z-index: 999;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
   .tick-circle {
     width: 80px; height: 80px;
     background: rgba(76,175,80,0.92);
