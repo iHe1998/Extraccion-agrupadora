@@ -805,6 +805,17 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') cerrarCamara
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('/Extraccion-agrupadora/sw.js');
   }
+  function toggleMenu() {
+  document.getElementById('navMenu').classList.toggle('open');
+}
+// Cerrar al tocar fuera
+document.addEventListener('click', e => {
+  const menu = document.getElementById('navMenu');
+  const btn = document.getElementById('hambBtn');
+  if (!menu.contains(e.target) && !btn.contains(e.target)) {
+    menu.classList.remove('open');
+  }
+});
 </script>
 </body>
 </html>
