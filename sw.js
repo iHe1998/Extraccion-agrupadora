@@ -1,10 +1,12 @@
-const CACHE = 'agrupadora-v4';
+const CACHE = 'agrupadora-v5';
 const ASSETS = [
   '/Extraccion-agrupadora/',
   '/Extraccion-agrupadora/index.html',
   '/Extraccion-agrupadora/manifest.json',
+  '/Extraccion-agrupadora/lector-etiquetas.html',
   '/Extraccion-agrupadora/logo.svg',
   'https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js'
+  'https://cdn.jsdelivr.net/npm/@zxing/browser@0.1.4/esm/index.js'
 ];
 
 self.addEventListener('install', e => {
