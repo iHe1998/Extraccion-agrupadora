@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lector Serie · Andreani</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #f4f4f4;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  header {
+    background: #d71920;
+    padding: 14px 24px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    box-shadow: 0 2px 8px rgba(215,25,32,0.25);
+    position: relative;
+  }
+  .logo-box {
+    background: #fff;
+    border-radius: 6px;
+    padding: 5px 12px;
+    font-size: 18px;
+    font-weight: 900;
+    color: #d71920;
+  }
+  .header-title { color: #fff; font-size: 14px; font-weight: 600; }
+  .header-sub { color: rgba(255,255,255,0.75); font-size: 11px; margin-top: 2px; }
+
+  /* Menú hamburguesa */
+  .hamburger {
+    margin-left: auto;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+  .hamburger span {
+    display: block;
+    width: 22px; height: 2.5px;
+    background: #fff;
+    border-radius: 2px;
+  }
+  .nav-menu {
+    display: none;
+    position: absolute;
+    top: 56px; right: 12px;
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    z-index: 500;
+    min-width: 220px;
+    overflow: hidden;
+    border-top: 3px solid #d71920;
+  }
+  .nav-menu.open { display: block; }
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 18px;
+    text-decoration: none;
+    color: #222;
+    font-size: 14px;
+    font-weight: 600;
+    border-bottom: 1px solid #f0f0f0;
+    transition: background 0.15s;
+  }
+  .nav-item:last-child { border-bottom: none; }
+  .nav-item:hover { background: #fff5f5; color: #d71920; }
+  .nav-item.active { color: #d71920; background: #fff5f5; }
+  .nav-icon { font-size: 20px; width: 28px; text-align: center; }
+  .nav-badge {
+    font-size: 10px;
+    background: #d71920;
+    color: #fff;
+    padding: 2px 7px;
+    border-radius: 10px;
+    font-weight: 700;
+  }
+
+  main { flex: 1; padding: 20px 16px; max-width: 600px; margin: 0 auto; width: 100%; }
+
+  .card {
+    background: #fff;
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: 0 2px 16px rgba(0,0,0,0.08);
+    border-top: 4px solid #d71920;
+    margin-bottom: 16px;
+  }
+
+  .section-title {
+    font-size: 12px; font-weight: 700; color: #d71920;
+    text-transform: uppercase; letter-spacing: 0.08em;
+    margin-bottom: 14px; display: flex; align-items: center; gap: 7px;
+  }
+  .section-title::before {
+    content: ''; display: inline-block;
+    width: 4px; height: 14px; background: #d71920; border-radius: 2px;
+  }
+
+  .cam-wrapper {
+    position: relative; border-radius: 10px;
+    overflow: hidden; background: #000;
+    aspect-ratio: 4/3; width: 100%;
+  }
+  #video { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+  .visor {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    pointer-events: none;
+  }
+  .visor-box {
+    width: 65%; aspect-ratio: 1;
+    border: 2.5px solid #d71920;
+    border-radius: 8px;
+    box-shadow: 0 0 0 9999px rgba(0,0,0,0.45);
+    position: relative;
+  }
+  .visor-hint {
+    position: absolute; bottom: -28px; left: 50%;
+    transform: translateX(-50%);
+    color: #fff; font-size: 11px; white-space: nowrap;
+    background: rgba(0,0,0,0.5); padding: 3px 8px; border-radius: 4px;
+  }
+
+  .cam-status {
+    position: absolute; top: 10px; left: 50%; transform: translateX(-50%);
+    background: rgba(0,0,0,0.65); color: #fff;
+    font-size: 12px; padding: 5px 12px; border-radius: 20px;
+    white-space: nowrap; font-weight: 500;
+  }
+  .cam-status.ok { background: rgba(76,175,80,0.85); }
+  .cam-status.proc { background: rgba(215,25,32,0.85); }
+
+  /* Tick centrado en el visor */
+  #tickOverlay {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    z-index: 10;
+  }
+  .tick-circle {
+    width: 70px; height: 70px;
+    background: rgba(76,175,80,0.92);
+    border-radius: 50%; display: flex;
+    align-items: center; justify-content: center;
+    font-size: 34px; color: #fff;
+    animation: tickAnim 0.9s ease forwards;
+  }
+  @keyframes tickAnim {
+    0%   { transform: scale(0.4); opacity: 0; }
+    35%  { transform: scale(1.2); opacity: 1; }
+    65%  { transform: scale(1);   opacity: 1; }
+    100% { transform: scale(1);   opacity: 0; }
+  }
+
+  .btn-row { display: flex; gap: 10px; margin-top: 12px; }
+  .btn {
+    flex: 1; padding: 11px; background: #d71920; color: #fff;
+    border: none; border-radius: 8px; font-size: 13px; font-weight: 600;
+    cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;
+    transition: background 0.15s;
+  }
+  .btn:hover { background: #b01018; }
+  .btn-outline {
+    flex: 0 0 auto; padding: 11px 14px;
+    background: #fff; border: 2px solid #ccc; color: #999;
+    border-radius: 8px; font-size: 13px; font-weight: 600;
+    cursor: pointer; display: flex; align-items: center; gap: 6px;
+    transition: all 0.15s;
+  }
+  .btn-outline:hover { border-color: #f44336; color: #f44336; }
+
+  /* Resultado actual */
+  .result-box {
+    background: #fafafa;
+    border: 1.5px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 14px 16px;
+    min-height: 60px;
+    display: flex; align-items: center; gap: 12px;
+    transition: border-color 0.2s;
+    margin-bottom: 16px;
+  }
+  .result-box.found { border-color: #4caf50; background: #f6fff6; }
+  .result-box.error { border-color: #f44336; background: #fff6f6; }
+  .result-value {
+    font-size: 20px; font-weight: 800; color: #2e7d32;
+    word-break: break-all; flex: 1;
+    font-family: 'Courier New', monospace;
+  }
+  .result-placeholder { font-size: 13px; color: #bbb; flex: 1; }
+
+  /* Lista series */
+  .unidades-header {
+    display: flex; align-items: center;
+    justify-content: space-between; margin-bottom: 12px;
+  }
+  .badge {
+    background: #d71920; color: #fff;
+    font-size: 11px; font-weight: 700;
+    padding: 3px 9px; border-radius: 20px;
+  }
+
+  .serie-row {
+    display: flex; align-items: center; gap: 8px;
+    background: #fafafa; border: 1px solid #e8e8e8;
+    border-radius: 6px; padding: 10px 12px;
+    margin-bottom: 8px;
+    animation: slideIn 0.25s ease;
+  }
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(-6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .serie-num { font-size: 11px; font-weight: 700; color: #d71920; width: 22px; flex-shrink: 0; }
+  .serie-val { font-size: 14px; font-weight: 700; color: #2e7d32; font-family: 'Courier New', monospace; flex: 1; word-break: break-all; }
+
+  .btn-sm {
+    background: #fff; border: 1px solid #e0e0e0; border-radius: 5px;
+    color: #888; padding: 4px 9px; font-size: 11px; font-weight: 600;
+    cursor: pointer; transition: all 0.15s; white-space: nowrap; flex-shrink: 0;
+  }
+  .btn-sm:hover { border-color: #d71920; color: #d71920; }
+  .btn-sm.del:hover { border-color: #f44336; color: #f44336; background: #fff6f6; }
+  .btn-sm.copied { border-color: #4caf50; color: #4caf50; }
+
+  .empty-state {
+    text-align: center; padding: 28px 16px; color: #ccc; font-size: 13px; line-height: 1.8;
+  }
+  .empty-icon { font-size: 34px; margin-bottom: 8px; }
+
+  footer { text-align: center; padding: 14px; font-size: 11px; color: #bbb; }
+  footer span { color: #d71920; font-weight: 700; }
+</style>
+</head>
+<body>
+
+<header>
+  <img src="logo.svg" height="36" style="background:white;padding:4px 10px;border-radius:5px">
+  <div>
+    <div class="header-title">Lector de N° Serie</div>
+    <div class="header-sub">Operaciones · Farmacéutica</div>
+  </div>
+  <button class="hamburger" onclick="toggleMenu()" id="hambBtn">
+    <span></span><span></span><span></span>
+  </button>
+</header>
+
+<nav class="nav-menu" id="navMenu">
+  <a class="nav-item" href="index.html">
+    <span class="nav-icon">📦</span>
+    <span class="nav-label">Extractor Agrupadora</span>
+  </a>
+  <a class="nav-item active" href="lector-etiquetas.html">
+    <span class="nav-icon">🔍</span>
+    <span class="nav-label">Lector N° Serie</span>
+    <span class="nav-badge">actual</span>
+  </a>
+</nav>
+
+<main>
+  <div class="card">
+    <div class="section-title">Cámara · Campo (21)</div>
+
+    <div class="cam-wrapper" id="camWrapper" style="display:none">
+      <video id="video" autoplay playsinline muted></video>
+      <div class="visor">
+        <div id="qr-wrapper" style="position:relative;width:65%;aspect-ratio:1;border:2.5px solid #d71920;border-radius:8px;box-shadow:0 0 0 9999px rgba(0,0,0,0.45)">
+          <div style="position:absolute;bottom:-28px;left:50%;transform:translateX(-50%);color:#fff;font-size:11px;white-space:nowrap;background:rgba(0,0,0,0.5);padding:3px 8px;border-radius:4px">
+            Apuntá al DataMatrix
+          </div>
+          <div id="tickOverlay" style="position:absolute;inset:0;display:none;align-items:center;justify-content:center;pointer-events:none;z-index:10;">
+            <div class="tick-circle">✓</div>
+          </div>
+        </div>
+      </div>
+      <div class="cam-status" id="camStatus">Iniciando...</div>
+    </div>
+
+    <canvas id="canvas" style="display:none"></canvas>
+
+    <div class="btn-row">
+      <button class="btn" id="btnCam" onclick="toggleCamara()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+          <circle cx="12" cy="13" r="4"/>
+        </svg>
+        Abrir cámara
+      </button>
+      <button class="btn-outline" id="btnLinterna" onclick="toggleLinterna()" style="display:none">🔦</button>
+      <button class="btn-outline" onclick="borrarTodo()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/>
+          <path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/>
+        </svg>
+        Borrar
+      </button>
+    </div>
+  </div>
+
+  <!-- Último leído -->
+  <div class="card">
+    <div class="section-title">Último leído</div>
+    <div class="result-box" id="resultBox">
+      <span class="result-placeholder" id="resultVal">El número de serie aparecerá aquí</span>
+    </div>
+
+    <!-- Lista acumulada -->
+    <div class="unidades-header">
+      <div class="section-title" style="margin-bottom:0">Series leídas</div>
+      <span class="badge" id="badge">0</span>
+    </div>
+    <div id="listaSeries">
+      <div class="empty-state">
+        <div class="empty-icon">🔬</div>
+        Escaneá un DataMatrix o QR.<br>El campo (21) aparecerá aquí.
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer>Herramienta interna · <span>Andreani</span> · Operaciones Farmacéutica</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+<script>
+
+let stream = null;
+let camAbierta = false;
+let linternaActiva = false;
+let series = [];
+let scanInterval = null;
+let scannedCodes = new Set();
+
+// ── EXTRAER (21) del string GS1 ──
+function extraerSerie21(raw) {
+  if (!raw) return null;
+
+  // Limpiar separadores GS1 (ASCII 29, o @ o ] que usan algunos scanners)
+  const limpio = raw.replace(/[\x1D\x1E\x04]/g, '|').replace(/@/g, '|');
+
+  // Buscar (21) seguido del valor hasta el próximo campo ( o fin
+  const patrones = [
+    /\(21\)([A-Z0-9\-]+)/i,
+    /21([A-Z0-9]{6,20})(?:\(|$|\|)/i,
+  ];
+
+  for (const p of patrones) {
+    const m = limpio.match(p);
+    if (m) return m[1].trim();
+  }
+
+  // Buscar en formato GS1 puro: AI 21 después de separador
+  const partes = limpio.split('|');
+  for (const parte of partes) {
+    if (parte.startsWith('21') && parte.length > 4) {
+      return parte.substring(2).trim();
+    }
+  }
+
+  return null;
+}
+
+// ── CÁMARA ──
+async function toggleCamara() {
+  camAbierta ? cerrarCamara() : await abrirCamara();
+}
+
+async function abrirCamara() {
+  document.getElementById('camWrapper').style.display = 'block';
+  const status = document.getElementById('camStatus');
+  status.textContent = 'Iniciando cámara...';
+  status.className = 'cam-status';
+  scannedCodes.clear();
+
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }
+    });
+    document.getElementById('video').srcObject = stream;
+    camAbierta = true;
+    document.getElementById('btnLinterna').style.display = 'flex';
+    document.getElementById('btnCam').innerHTML = `
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <line x1="1" y1="1" x2="23" y2="23"/>
+        <path d="M21 21H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h3m3-3h6l2 3h4a2 2 0 0 1 2 2v9.34"/>
+        <circle cx="12" cy="13" r="4"/>
+      </svg> Cerrar cámara`;
+    status.textContent = 'Apuntá al DataMatrix...';
+    iniciarScan();
+  } catch(e) {
+    status.className = 'cam-status proc';
+    status.textContent = 'Error: ' + (e.message || 'Permiso denegado');
+  }
+}
+
+function cerrarCamara() {
+  clearInterval(scanInterval);
+  linternaActiva = false;
+  if (stream) stream.getTracks().forEach(t => t.stop());
+  stream = null;
+  camAbierta = false;
+  scannedCodes.clear();
+  document.getElementById('camWrapper').style.display = 'none';
+  document.getElementById('btnLinterna').style.display = 'none';
+  document.getElementById('btnCam').innerHTML = `
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+      <circle cx="12" cy="13" r="4"/>
+    </svg> Abrir cámara`;
+}
+
+function iniciarScan() {
+  const video = document.getElementById('video');
+  const canvas = document.getElementById('canvas');
+  const ctx = canvas.getContext('2d');
+  const status = document.getElementById('camStatus');
+
+  scanInterval = setInterval(() => {
+    if (!camAbierta || video.readyState !== 4) return;
+
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    ctx.drawImage(video, 0, 0);
+
+    const img = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const code = jsQR(img.data, img.width, img.height, { inversionAttempts: 'dontInvert' });
+
+    if (code && code.data && !scannedCodes.has(code.data)) {
+      const serie = extraerSerie21(code.data);
+
+      if (serie) {
+        scannedCodes.add(code.data);
+        agregarSerie(serie);
+        mostrarTick();
+        status.textContent = '✓ Serie leída — seguí escaneando';
+        status.className = 'cam-status ok';
+        setTimeout(() => {
+          if (camAbierta) { status.textContent = 'Apuntá al DataMatrix...'; status.className = 'cam-status'; }
+        }, 2000);
+      } else if (!scannedCodes.has(code.data)) {
+        // Código leído pero sin campo (21)
+        status.textContent = 'Sin campo (21) — probá otro código';
+        status.className = 'cam-status proc';
+        setTimeout(() => {
+          if (camAbierta) { status.textContent = 'Apuntá al DataMatrix...'; status.className = 'cam-status'; }
+        }, 2000);
+        scannedCodes.add(code.data); // evitar spam
+      }
+    }
+  }, 200);
+}
+
+// ── AGREGAR / RENDER ──
+function agregarSerie(serie) {
+  series.push({ serie, id: Date.now() });
+  renderSeries();
+  // Mostrar en resultado actual
+  const box = document.getElementById('resultBox');
+  const val = document.getElementById('resultVal');
+  box.className = 'result-box found';
+  val.className = 'result-value';
+  val.innerHTML = `${serie} <button class="btn-sm" id="cpActual" onclick="copiar('${serie}','cpActual')">Copiar</button>`;
+}
+
+function borrarSerie(id) {
+  series = series.filter(s => s.id !== id);
+  renderSeries();
+  if (series.length === 0) resetResultado();
+}
+
+function borrarTodo() {
+  series = [];
+  scannedCodes.clear();
+  renderSeries();
+  resetResultado();
+}
+
+function resetResultado() {
+  document.getElementById('resultBox').className = 'result-box';
+  document.getElementById('resultVal').className = '';
+  document.getElementById('resultVal').innerHTML = '<span class="result-placeholder">El número de serie aparecerá aquí</span>';
+}
+
+function renderSeries() {
+  const lista = document.getElementById('listaSeries');
+  document.getElementById('badge').textContent = series.length;
+
+  if (series.length === 0) {
+    lista.innerHTML = `<div class="empty-state">
+      <div class="empty-icon">🔬</div>
+      Escaneá un DataMatrix o QR.<br>El campo (21) aparecerá aquí.
+    </div>`;
+    return;
+  }
+
+  lista.innerHTML = series.map((s, i) => `
+    <div class="serie-row">
+      <span class="serie-num">${i + 1}</span>
+      <span class="serie-val">${s.serie}</span>
+      <button class="btn-sm" id="cp${s.id}" onclick="copiar('${s.serie}','cp${s.id}')">Copiar</button>
+      <button class="btn-sm del" onclick="borrarSerie(${s.id})">✕</button>
+    </div>
+  `).join('');
+}
+
+function copiar(val, btnId) {
+  navigator.clipboard.writeText(val).then(() => {
+    const btn = document.getElementById(btnId);
+    if (btn) {
+      btn.textContent = '✓';
+      btn.classList.add('copied');
+      setTimeout(() => { btn.textContent = 'Copiar'; btn.classList.remove('copied'); }, 1800);
+    }
+  });
+}
+
+function mostrarTick() {
+  const el = document.getElementById('tickOverlay');
+  el.style.display = 'flex';
+  const circle = el.querySelector('.tick-circle');
+  circle.style.animation = 'none';
+  circle.offsetHeight;
+  circle.style.animation = 'tickAnim 0.9s ease forwards';
+  setTimeout(() => { el.style.display = 'none'; }, 900);
+}
+
+async function toggleLinterna() {
+  if (!stream) return;
+  const track = stream.getVideoTracks()[0];
+  linternaActiva = !linternaActiva;
+  try {
+    await track.applyConstraints({ advanced: [{ torch: linternaActiva }] });
+    document.getElementById('btnLinterna').textContent = linternaActiva ? '🔦 ON' : '🔦';
+  } catch(e) {
+    alert('Tu dispositivo no soporta control de linterna.');
+    linternaActiva = false;
+  }
+}
+
+// ── MENÚ ──
+function toggleMenu() {
+  document.getElementById('navMenu').classList.toggle('open');
+}
+document.addEventListener('click', e => {
+  const menu = document.getElementById('navMenu');
+  const btn = document.getElementById('hambBtn');
+  if (!menu.contains(e.target) && !btn.contains(e.target)) {
+    menu.classList.remove('open');
+  }
+});
+
+</script>
+</body>
+</html>
