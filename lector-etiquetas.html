@@ -277,8 +277,6 @@ function iniciarScan() {
   ];
   hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS, formats);
   hints.set(ZXing.DecodeHintType.TRY_HARDER, true);
-  hints.set(ZXing.DecodeHintType.ALSO_INVERTED, true);
-
   const reader = new ZXing.MultiFormatReader();
   reader.setHints(hints);
 
@@ -298,8 +296,7 @@ function iniciarScan() {
 
       try {
         const luminance = new ZXing.HTMLCanvasElementLuminanceSource(canvas);
-        const luminanceInv = luminance.invert();
-        const bmp = new ZXing.BinaryBitmap(new ZXing.HybridBinarizer(luminanceInv));
+        const bmp = new ZXing.BinaryBitmap(new ZXing.HybridBinarizer(luminance));
         const result = reader.decode(bmp);
         const raw = result.getText();
         dbg('RAW: ' + result.getText());
