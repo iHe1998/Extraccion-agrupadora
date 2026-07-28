@@ -277,6 +277,7 @@ function iniciarScan() {
   ];
   hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS, formats);
   hints.set(ZXing.DecodeHintType.TRY_HARDER, true);
+  hints.set(ZXing.DecodeHintType.ALSO_INVERTED, true);
 
   const reader = new ZXing.MultiFormatReader();
   reader.setHints(hints);
