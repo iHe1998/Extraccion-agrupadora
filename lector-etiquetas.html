@@ -194,28 +194,26 @@ let series = [];
 let scannedCodes = new Set();
 let scanLoop = false;
 
-// ── EXTRAER (21) ──
 function extraerSerie21(raw) {
   if (!raw) return null;
-  const limpio = raw.replace(/[\x1D\x1E\x04\x1C]/g, '|');
 
-  // Formato con paréntesis: (21)XXXXX
-  const m1 = limpio.match(/\(21\)([A-Z0-9\-]{1,30})/i);
+  // Formato pistola Zebra: ...21XXXXXXX*...
+  const m1 = raw.match(/21([A-Z0-9]+)\*/i);
   if (m1) return m1[1].trim();
 
-  // Separado por | : ...21XXXXX|...
+  // Formato con paréntesis: (21)XXXXX
+  const m2 = raw.match(/\(21\)([A-Z0-9\-]+)/i);
+  if (m2) return m2[1].trim();
+
+  // Formato GS1 con separador pipe
+  const limpio = raw.replace(/[\x1D\x1E\x04\x1C]/g, '|');
   const partes = limpio.split('|');
   for (const p of partes) {
     if (/^21[A-Z0-9\-]{4,20}$/i.test(p)) return p.substring(2).trim();
   }
 
-  // AI 21 en medio del string
-  const m2 = limpio.match(/(?:^|\|)21([A-Z0-9\-]{4,20})(?:\(|\||$)/i);
-  if (m2) return m2[1].trim();
-
   return null;
 }
-
 // ── CÁMARA ──
 async function toggleCamara() {
   camAbierta ? cerrarCamara() : await abrirCamara();
