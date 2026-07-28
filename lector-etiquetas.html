@@ -285,6 +285,7 @@ function iniciarScan() {
         const bmp = new ZXing.BinaryBitmap(new ZXing.HybridBinarizer(luminance));
         const result = reader.decode(bmp);
         const raw = result.getText();
+        console.log('RAW:', raw);
 
         if (raw && !scannedCodes.has(raw)) {
           const serie = extraerSerie21(raw);
