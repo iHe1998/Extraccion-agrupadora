@@ -197,22 +197,31 @@ let scanLoop = false;
 function extraerSerie21(raw) {
   if (!raw) return null;
 
-  // Formato pistola Zebra: ...21XXXXXXX*...
-  const m1 = raw.match(/21([A-Z0-9]+)\*/i);
+  // Limpiar separadores GS1
+  const limpio = raw.replace(/[\x1D\x1E\x04\x1C]/g, '|');
+
+  // Formato Zebra con asterisco: 21XXXXX*
+  const m1 = limpio.match(/21([A-Z0-9]+)\*/i);
   if (m1) return m1[1].trim();
 
   // Formato con paréntesis: (21)XXXXX
-  const m2 = raw.match(/\(21\)([A-Z0-9\-]+)/i);
+  const m2 = limpio.match(/\(21\)([A-Z0-9\-]+)/i);
   if (m2) return m2[1].trim();
 
-  // Formato GS1 con separador pipe
-  const limpio = raw.replace(/[\x1D\x1E\x04\x1C]/g, '|');
+  // Formato GS1 sin separadores:
+  // (01) tiene 14 dígitos fijos, luego viene (21) de longitud variable
+  // terminado cuando aparece (17), (10), (11), (00) u otro AI conocido
+  const m3 = raw.match(/01\d{14}21([A-Z0-9]+?)(?=17\d{6}|10[A-Z0-9]|11\d{6}|00\d|$)/i);
+  if (m3) return m3[1].trim();
+
+  // Formato con separador pipe
   const partes = limpio.split('|');
   for (const p of partes) {
-    if (/^21[A-Z0-9\-]{4,20}$/i.test(p)) return p.substring(2).trim();
+    if (/^21[A-Z0-9\-]{4,25}$/i.test(p)) return p.substring(2).trim();
   }
 
   return null;
+}
 }
 // ── CÁMARA ──
 async function toggleCamara() {
