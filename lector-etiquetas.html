@@ -285,7 +285,7 @@ function iniciarScan() {
         const bmp = new ZXing.BinaryBitmap(new ZXing.HybridBinarizer(luminance));
         const result = reader.decode(bmp);
         const raw = result.getText();
-        console.log('RAW:', raw);
+        dbg('RAW: ' + result.getText());
 
         if (raw && !scannedCodes.has(raw)) {
           const serie = extraerSerie21(raw);
@@ -428,6 +428,13 @@ document.addEventListener('click', e => {
   }
 });
 
+</script>
+ <div id="debugBox" style="position:fixed;bottom:0;left:0;right:0;background:rgba(0,0,0,0.85);color:#0f0;font-family:monospace;font-size:11px;padding:8px;max-height:150px;overflow-y:auto;z-index:9999;"></div>
+<script>
+function dbg(msg) {
+  const box = document.getElementById('debugBox');
+  box.innerHTML = msg + '<br>' + box.innerHTML;
+}
 </script>
 </body>
 </html>
