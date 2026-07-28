@@ -298,7 +298,8 @@ function iniciarScan() {
 
       try {
         const luminance = new ZXing.HTMLCanvasElementLuminanceSource(canvas);
-        const bmp = new ZXing.BinaryBitmap(new ZXing.HybridBinarizer(luminance));
+        const luminanceInv = luminance.invert();
+        const bmp = new ZXing.BinaryBitmap(new ZXing.HybridBinarizer(luminanceInv));
         const result = reader.decode(bmp);
         const raw = result.getText();
         dbg('RAW: ' + result.getText());
