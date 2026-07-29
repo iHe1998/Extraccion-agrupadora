@@ -197,55 +197,31 @@ let scanLoop = false;
 function extraerSerie21(raw) {
   if (!raw) return null;
 
-  // Limpiar separadores GS1
   const limpio = raw.replace(/[\x1D\x1E\x04\x1C]/g, '|');
 
-  // Formato Zebra con asterisco: 21XXXXX*
+  // Formato con asterisco: 21XXXXX* (pistola Zebra / mayoría de casos)
   const m1 = limpio.match(/21([A-Z0-9]+)\*/i);
   if (m1) return m1[1].trim();
 
   // Formato con paréntesis: (21)XXXXX
-  const m2 = limpio.match(/\(21\)([A-Z0-9\-]+)/i);
+  const m2 = limpio.match(/\(21\)([A-Z0-9\-\s]+?)(?:\s|$)/i);
   if (m2) return m2[1].trim();
 
-  // Formato con separador pipe
+  // Formato separador pipe
   const partes = limpio.split('|');
   for (const p of partes) {
-    if (/^21[A-Z0-9\-]{4,25}$/i.test(p)) return p.substring(2).trim();
+    if (/^21[A-Z0-9\-]{4,14}$/i.test(p)) return p.substring(2).trim();
   }
 
-  // Formato GS1 sin separadores:
-  // 01 siempre tiene 14 dígitos fijos, luego viene 21 + serie variable
-  // La serie termina cuando aparece un AI conocido de longitud fija
-  if (raw.length > 16 && raw.startsWith('01')) {
-    const resto = raw.substring(16); // saltar "01" + 14 dígitos
+  // GS1 sin separadores: 01 + 14 dígitos + 21 + hasta 14 chars
+  if (raw.length >= 32 && raw.startsWith('01')) {
+    const resto = raw.substring(16);
     if (resto.startsWith('21')) {
-      const serie = resto.substring(2); // saltar "21"
-      
-      // Lista de AIs que pueden seguir después del (21)
-      // con su longitud fija o patrón reconocible
-      const patrones = [
-        /17\d{6}/,   // fecha vencimiento (8 chars fijos)
-        /11\d{6}/,   // fecha produccion (8 chars fijos)
-        /13\d{6}/,   // fecha empaque (8 chars fijos)
-        /15\d{6}/,   // best before (8 chars fijos)
-        /10[A-Z0-9]/,// lote (variable)
-        /310\d{7}/,  // peso neto
-        /00\d/,      // SSCC
-        /26\d/,      // segundo campo variable
-      ];
-
-      let corte = -1;
-      for (const p of patrones) {
-        const idx = serie.search(p);
-        if (idx > 0 && (corte === -1 || idx < corte)) {
-          corte = idx;
-        }
-      }
-
-      if (corte > 0) return serie.substring(0, corte).trim();
-      // Si no encuentra corte claro, tomar hasta 20 chars max
-      return serie.substring(0, 20).trim();
+      // Tomar hasta * o hasta 14 chars
+      const serie = resto.substring(2);
+      const asterisco = serie.indexOf('*');
+      if (asterisco > 0) return serie.substring(0, asterisco).trim();
+      return serie.substring(0, 14).trim();
     }
   }
 
