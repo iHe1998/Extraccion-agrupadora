@@ -295,9 +295,24 @@ function iniciarScan() {
       ctx.drawImage(video, 0, 0);
 
       try {
-        const luminance = new ZXing.HTMLCanvasElementLuminanceSource(canvas);
-        const bmp = new ZXing.BinaryBitmap(new ZXing.HybridBinarizer(luminance));
-        const result = reader.decode(bmp);
+       const luminance = new ZXing.HTMLCanvasElementLuminanceSource(canvas);
+let result = null;
+
+// Intentar normal primero
+try {
+  const bmp = new ZXing.BinaryBitmap(new ZXing.HybridBinarizer(luminance));
+  result = reader.decode(bmp);
+} catch(e1) {
+  // Si falla, intentar invertido (fondo negro)
+  try {
+    const bmpInv = new ZXing.BinaryBitmap(new ZXing.HybridBinarizer(luminance.invert()));
+    result = reader.decode(bmpInv);
+  } catch(e2) {
+    // Sin código visible
+  }
+}
+
+if (!result) throw new Error('no decode');
         const raw = result.getText();
         dbg('RAW: ' + result.getText());
 
