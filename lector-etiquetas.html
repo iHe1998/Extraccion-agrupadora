@@ -197,33 +197,25 @@ let scanLoop = false;
 function extraerSerie21(raw) {
   if (!raw) return null;
 
-  const limpio = raw.replace(/[\x1D\x1E\x04\x1C]/g, '|');
+  const limpio = raw.replace(/[\x00-\x1F\x7F]/g, '|');
 
-  // Formato con asterisco: 21XXXXX* (pistola Zebra / mayoría de casos)
+  // Formato con asterisco
   const m1 = limpio.match(/21([A-Z0-9]+)\*/i);
   if (m1) return m1[1].trim();
 
-  // Formato con paréntesis: (21)XXXXX
-  const m2 = limpio.match(/\(21\)([A-Z0-9\-\s]+?)(?:\s|$)/i);
+  // Formato con paréntesis
+  const m2 = limpio.match(/\(21\)([A-Z0-9\-\s]+?)(?:\s|$|\|)/i);
   if (m2) return m2[1].trim();
 
   // Formato separador pipe
-  const partes = limpio.split('|');
+  const partes = limpio.split('|').filter(Boolean);
   for (const p of partes) {
     if (/^21[A-Z0-9\-]{4,14}$/i.test(p)) return p.substring(2).trim();
   }
 
-  // GS1 sin separadores: 01 + 14 dígitos + 21 + hasta 14 chars
-  if (raw.length >= 32 && raw.startsWith('01')) {
-    const resto = raw.substring(16);
-    if (resto.startsWith('21')) {
-      // Tomar hasta * o hasta 14 chars
-      const serie = resto.substring(2);
-      const asterisco = serie.indexOf('*');
-      if (asterisco > 0) return serie.substring(0, asterisco).trim();
-      return serie.substring(0, 14).trim();
-    }
-  }
+  // Buscar "01" + 14 dígitos + "21" + serie, en CUALQUIER posición del string
+  const m3 = limpio.match(/01\d{14}21([A-Z0-9]{1,14})/i);
+  if (m3) return m3[1].trim();
 
   return null;
 }
@@ -241,8 +233,24 @@ async function abrirCamara() {
 
   try {
     stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }
-    });
+  video: {
+    facingMode: 'environment',
+    width: { ideal: 1920 },
+    height: { ideal: 1080 },
+    focusMode: 'continuous'
+  }
+});
+
+// Forzar autoenfoque continuo si el dispositivo lo soporta
+const track = stream.getVideoTracks()[0];
+const capabilities = track.getCapabilities ? track.getCapabilities() : {};
+if (capabilities.focusMode && capabilities.focusMode.includes('continuous')) {
+  try {
+    await track.applyConstraints({ advanced: [{ focusMode: 'continuous' }] });
+  } catch(e) {
+    console.log('No se pudo forzar autoenfoque:', e);
+  }
+}
     const video = document.getElementById('video');
     video.srcObject = stream;
     camAbierta = true;
