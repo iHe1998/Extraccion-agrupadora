@@ -197,18 +197,6 @@ let scanLoop = false;
 function extraerSerie21(raw) {
   if (!raw) return null;
  
-const result = reader.decode(bmp);
-const raw = result.getText();
-
-let rawBytesInfo = 'sin rawBytes';
-try {
-  const rb = result.getRawBytes();
-  if (rb) rawBytesInfo = Array.from(rb).join(',');
-} catch(e) {}
-
-dbg('RAW: ' + raw);
-dbg('BYTES: ' + rawBytesInfo);
- 
 
   // El separador real GS1 es el caracter GS (código 29 / \x1D)
   // A veces ZXing también puede devolver \x1E o \x04 según el lector
@@ -346,8 +334,15 @@ try {
 }
 
 if (!result) throw new Error('no decode');
-        const raw = result.getText();
-        dbg('RAW: ' + result.getText());
+        const result = reader.decode(bmp);
+const raw = result.getText();
+let rawBytesInfo = 'sin rawBytes';
+try {
+  const rb = result.getRawBytes();
+  if (rb) rawBytesInfo = Array.from(rb).join(',');
+} catch(e) {}
+dbg('RAW: ' + raw);
+dbg('BYTES: ' + rawBytesInfo);
 
         if (raw && !scannedCodes.has(raw)) {
           const serie = extraerSerie21(raw);
