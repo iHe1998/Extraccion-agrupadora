@@ -196,92 +196,42 @@ let scanLoop = false;
  
 function extraerSerie21(raw) {
   if (!raw) return null;
+
+  // El separador real GS1 es el caracter GS (código 29 / \x1D)
+  // A veces ZXing también puede devolver \x1E o \x04 según el lector
+  const conSeparadores = raw.replace(/[\x1E\x04\x1C]/g, '\x1D');
   
-  // DEBUG temporal: mostrar códigos de caracteres
-  let codes = '';
-  for (let i = 0; i < raw.length; i++) {
-    const c = raw.charCodeAt(i);
-    if (c < 32 || c > 126) codes += `[pos${i}:${c}]`;
+  // Quitar un posible FNC1 inicial (GS al principio del string)
+  const limpio = conSeparadores.replace(/^\x1D+/, '');
+
+  // Dividir por el separador real
+  const campos = limpio.split('\x1D');
+
+  // Buscar el campo que empieza con "21"
+  for (const campo of campos) {
+    if (campo.startsWith('21')) {
+      return campo.substring(2).trim();
+    }
+    // Puede venir pegado con otros AI en el mismo segmento
+    const m = campo.match(/21([A-Z0-9]+)$/i);
+    if (m && campo.indexOf('21') === campo.search(/21[A-Z0-9]+$/i)) {
+      return m[1].trim();
+    }
   }
-  dbg('CODES ESPECIALES: ' + (codes || 'ninguno') + ' | LEN: ' + raw.length);
 
-  const limpio = raw.replace(/[\x1D\x1E\x04\x1C]/g, '|');
+  // Fallback: buscar 21 seguido de alfanuméricos hasta el próximo GS o fin
+  const m2 = limpio.match(/21([A-Z0-9]+?)(?=\x1D|$)/i);
+  if (m2) return m2[1].trim();
 
-  // Formato con asterisco (pistola Zebra)
-  let m = limpio.match(/21([A-Z0-9]+)\*/i);
-  if (m) return m[1].trim();
+  // Formato con asterisco (por si la lectura viene de otra fuente)
+  const m3 = raw.match(/21([A-Z0-9]+)\*/i);
+  if (m3) return m3[1].trim();
 
   // Formato con paréntesis
-  m = limpio.match(/\(21\)([A-Z0-9\-\s]+?)(?:\s|$|\|)/i);
-  if (m) return m[1].trim();
+  const m4 = raw.match(/\(21\)([A-Z0-9\-]+)/i);
+  if (m4) return m4[1].trim();
 
-  // Formato separador pipe
-  const partes = limpio.split('|').filter(Boolean);
-  for (const p of partes) {
-    const pm = p.match(/^21([A-Z0-9\-]{1,20})$/i);
-    if (pm) return pm[1].trim();
-  }
-
-  // Sin separadores: tokenizar como cadena GS1
-  const soloAlfa = raw.replace(/[^A-Z0-9]/gi, '').toUpperCase();
-  return tokenizarGS1(soloAlfa);
-}
-
-function tokenizarGS1(s) {
-  const FECHA_AI = ['11', '13', '15', '17'];
-  const VAR_AI = ['10', '21'];
-  let i = 0;
-  let serie = null;
-
-  if (s.substr(0, 2) === '01' && /^\d{14}$/.test(s.substr(2, 14))) {
-    i = 16;
-  }
-
-  function esFechaValida(val) {
-    if (!/^\d{6}$/.test(val)) return false;
-    const mm = parseInt(val.substr(2, 2), 10);
-    const dd = parseInt(val.substr(4, 2), 10);
-    return mm >= 1 && mm <= 12 && dd >= 1 && dd <= 31;
-  }
-
-  while (i < s.length - 1) {
-    const ai = s.substr(i, 2);
-
-    if (FECHA_AI.includes(ai) && esFechaValida(s.substr(i + 2, 6))) {
-      i += 8;
-      continue;
-    }
-
-    if (VAR_AI.includes(ai)) {
-      const j = i + 2;
-      let fin = -1;
-
-      // 1ra pasada: buscar la próxima fecha válida como límite
-      for (let k = j + 1; k < s.length - 1 && fin === -1; k++) {
-        const posibleAi = s.substr(k, 2);
-        if (FECHA_AI.includes(posibleAi) && esFechaValida(s.substr(k + 2, 6))) {
-          fin = k;
-        }
-      }
-      // 2da pasada: si no hay fecha, buscar el otro AI variable (10 o 21)
-      if (fin === -1) {
-        const otroAi = ai === '21' ? '10' : '21';
-        const idx = s.indexOf(otroAi, j + 1);
-        if (idx > j) fin = idx;
-      }
-      // Último recurso: hasta el final
-      if (fin === -1) fin = s.length;
-
-      const valor = s.substring(j, Math.min(fin, j + 20));
-      if (ai === '21') serie = valor;
-      i = fin;
-      continue;
-    }
-
-    i++;
-  }
-
-  return serie;
+  return null;
 }
 // ── CÁMARA ──
 async function toggleCamara() {
