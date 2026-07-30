@@ -197,10 +197,9 @@ let scanLoop = false;
 function extraerSerie21(raw) {
   if (!raw) return null;
  
- const result = reader.decode(bmp);
- const raw = result.getText();
+const result = reader.decode(bmp);
+const raw = result.getText();
 
-// DEBUG: ver bytes raw si están disponibles
 let rawBytesInfo = 'sin rawBytes';
 try {
   const rb = result.getRawBytes();
