@@ -283,9 +283,15 @@ auth.onAuthStateChanged(user => {
   currentUser = user;
   isAdmin = !!(user && user.email === ADMIN_EMAIL);
   actualizarUIAuth();
+
+  if (user && sessionStorage.getItem('reabrirSettings')) {
+    sessionStorage.removeItem('reabrirSettings');
+    abrirSettings();
+  }
 });
 
 function iniciarSesion() {
+  sessionStorage.setItem('reabrirSettings', '1');
   const provider = new firebase.auth.GoogleAuthProvider();
   auth.signInWithRedirect(provider);
 }
