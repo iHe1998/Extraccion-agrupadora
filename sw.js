@@ -7,6 +7,9 @@ const ASSETS = [
   '/Extraccion-agrupadora/logo.svg',
   'https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js',
   'https://cdn.jsdelivr.net/npm/@zxing/library@0.19.1/umd/index.min.js'
+  'https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js',
+  'https://www.gstatic.com/firebasejs/10.13.2/firebase-auth-compat.js',
+  'https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore-compat.js',
 ];
 
 self.addEventListener('install', e => {
