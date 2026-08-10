@@ -268,7 +268,7 @@
 <!-- Modal historial -->
 <div class="modal-overlay" id="historialOverlay">
   <div class="modal">
-    <div class="modal-title">📊 Historial por laboratorio</div>
+    <div class="modal-title">📊 Historial · últimas 24 hs</div>
     <select class="filtro-lab" id="filtroLabHist" onchange="renderHistorial()">
       <option value="">Todos los laboratorios</option>
     </select>
@@ -622,6 +622,7 @@ function agregarSerie(resultado, raw) {
 }
 
 function registrarLecturaEnNube(item) {
+  const expira = new Date(Date.now() + 24 * 60 * 60 * 1000);
   db.collection('lecturas').add({
     serie: item.serie,
     gtin: item.gtin || null,
@@ -629,6 +630,7 @@ function registrarLecturaEnNube(item) {
     producto: item.nombre || null,
     verificado: item.configurado,
     createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+    expiresAt: firebase.firestore.Timestamp.fromDate(expira),
     createdBy: currentUser ? currentUser.email : 'anónimo'
   }).catch(e => console.error('No se pudo registrar la lectura:', e));
 }
@@ -1001,7 +1003,11 @@ async function cargarHistorial() {
   const box = document.getElementById('historialBox');
   box.innerHTML = '<div class="empty-state">Cargando…</div>';
   try {
-    const snap = await db.collection('lecturas').orderBy('createdAt', 'desc').limit(200).get();
+    const desde = firebase.firestore.Timestamp.fromDate(new Date(Date.now() - 24 * 60 * 60 * 1000));
+    const snap = await db.collection('lecturas')
+      .where('createdAt', '>=', desde)
+      .orderBy('createdAt', 'desc')
+      .limit(300).get();
     historialCache = [];
     snap.forEach(doc => historialCache.push(doc.data()));
     renderHistorial();
