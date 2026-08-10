@@ -277,23 +277,26 @@ let currentUser = null;
 let isAdmin = false;
 let productConfigsCache = {};
 
-auth.getRedirectResult().catch(e => console.error('Redirect auth error:', e));
-
 auth.onAuthStateChanged(user => {
   currentUser = user;
   isAdmin = !!(user && user.email === ADMIN_EMAIL);
-  actualizarUIAuth();
-
-  if (user && sessionStorage.getItem('reabrirSettings')) {
-    sessionStorage.removeItem('reabrirSettings');
-    abrirSettings();
-  }
+  actualizarUIAuth(); 
+ 
 });
 
 function iniciarSesion() {
-  sessionStorage.setItem('reabrirSettings', '1');
   const provider = new firebase.auth.GoogleAuthProvider();
-  auth.signInWithRedirect(provider);
+  auth.signInWithPopup(provider)
+    .then(() => {
+      mostrarToast('✓ Sesión iniciada');
+    })
+    .catch(e => {
+      if (e.code === 'auth/popup-blocked') {
+        mostrarToast('El navegador bloqueó la ventana. Permití popups para este sitio.');
+      } else if (e.code !== 'auth/popup-closed-by-user' && e.code !== 'auth/cancelled-popup-request') {
+        mostrarToast('Error al iniciar sesión: ' + e.message);
+      }
+    });
 }
 function cerrarSesion() {
   auth.signOut();
