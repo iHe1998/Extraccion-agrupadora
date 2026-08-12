@@ -1,28 +1,28 @@
-const CACHE = 'agrupadora-v18';
+const CACHE = 'agrupadora-v10';
 const ASSETS = [
   '/Extraccion-agrupadora/',
   '/Extraccion-agrupadora/index.html',
-  '/Extraccion-agrupadora/manifest.json',
   '/Extraccion-agrupadora/lector-etiquetas.html',
+  '/Extraccion-agrupadora/manifest.json',
   '/Extraccion-agrupadora/logo.svg',
   'https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js',
-  'https://cdn.jsdelivr.net/npm/@zxing/library@0.19.1/umd/index.min.js'
+  'https://cdn.jsdelivr.net/npm/@zxing/library@0.19.1/umd/index.min.js',
   'https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js',
   'https://www.gstatic.com/firebasejs/10.13.2/firebase-auth-compat.js',
-  'https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore-compat.js',
+  'https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore-compat.js'
 ];
 
 self.addEventListener('install', e => {
   e.waitUntil(
-    caches.open(CACHE).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting())
+    caches.open(CACHE).then(c => c.addAll(ASSETS))
   );
 });
 
 self.addEventListener('activate', e => {
   e.waitUntil(
-    caches.keys().then(keys =>
-      Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
-    ).then(() => self.clients.claim())
+    caches.keys()
+      .then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k))))
+      .then(() => self.clients.claim())
   );
 });
 
@@ -30,4 +30,9 @@ self.addEventListener('fetch', e => {
   e.respondWith(
     caches.match(e.request).then(cached => cached || fetch(e.request))
   );
+});
+
+// Permite que la página ordene aplicar la actualización
+self.addEventListener('message', e => {
+  if (e.data === 'APLICAR_ACTUALIZACION') self.skipWaiting();
 });
