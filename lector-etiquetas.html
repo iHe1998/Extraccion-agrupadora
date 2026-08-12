@@ -1141,8 +1141,50 @@ document.addEventListener('click', e => {
   }
 });
 
+let swWaiting = null;
+let recargando = false;
+
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/Extraccion-agrupadora/sw.js');
+  navigator.serviceWorker.register('/Extraccion-agrupadora/sw.js').then(reg => {
+
+    // Ya hay una versión nueva esperando
+    if (reg.waiting) mostrarBarraActualizacion(reg.waiting);
+
+    // Detecta una versión nueva mientras la app está abierta
+    reg.addEventListener('updatefound', () => {
+      const nuevo = reg.installing;
+      if (!nuevo) return;
+      nuevo.addEventListener('statechange', () => {
+        if (nuevo.state === 'installed' && navigator.serviceWorker.controller) {
+          mostrarBarraActualizacion(nuevo);
+        }
+      });
+    });
+
+    // Revisa si hay updates cada 30 min y al volver a la app
+    setInterval(() => reg.update(), 30 * 60 * 1000);
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) reg.update();
+    });
+  });
+
+  // Cuando el SW nuevo toma el control, recargar una sola vez
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (recargando) return;
+    recargando = true;
+    window.location.reload();
+  });
+}
+
+function mostrarBarraActualizacion(worker) {
+  swWaiting = worker;
+  document.getElementById('updateBar').classList.add('show');
+}
+
+function aplicarActualizacion() {
+  const btn = document.querySelector('.update-btn');
+  if (btn) btn.textContent = 'Actualizando…';
+  if (swWaiting) swWaiting.postMessage('APLICAR_ACTUALIZACION');
 }
 
 </script>
