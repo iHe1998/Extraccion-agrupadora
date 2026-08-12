@@ -1,4 +1,4 @@
-const CACHE = 'agrupadora-v19';
+const CACHE = 'agrupadora-v20';
 const ASSETS = [
   '/Extraccion-agrupadora/',
   '/Extraccion-agrupadora/index.html',
