@@ -32,15 +32,43 @@
   body { background: #f4f4f4; color: #222; font-family: 'Segoe UI', Arial, sans-serif; min-height: 100vh; display: flex; flex-direction: column; }
 
   /* ═══ HEADER (idéntico al index) ═══ */
-  header { background: var(--rojo); padding: 14px 24px; display: flex; align-items: center; gap: 14px; box-shadow: 0 2px 8px rgba(215,25,32,0.25); position: relative; min-height: 66px; }
+  header {
+    background: var(--rojo);
+    padding: 0 20px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    box-shadow: 0 2px 8px rgba(215,25,32,0.25);
+    position: relative;
+    height: 64px;
+    flex-shrink: 0;
+  }
+  header > div { min-width: 0; flex: 1; }
   header img { height: 36px; background: #fff; padding: 4px 10px; border-radius: 5px; flex-shrink: 0; }
-  .header-title { color: #fff; font-size: 14px; font-weight: 600; letter-spacing: 0.03em; line-height: 1.2; }
-  .header-sub { color: rgba(255,255,255,0.75); font-size: 11px; margin-top: 3px; line-height: 1.2; }
+  .header-title {
+    color: #fff;
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .header-sub {
+    color: rgba(255,255,255,0.75);
+    font-size: 11px;
+    margin-top: 2px;
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
 
   .hamburger { margin-left: auto; background: none; border: none; cursor: pointer; padding: 6px; display: flex; flex-direction: column; gap: 5px; }
   .hamburger span { display: block; width: 22px; height: 2.5px; background: #fff; border-radius: 2px; transition: all 0.2s; }
 
-  .nav-menu { display: none; position: absolute; top: 62px; right: 12px; background: #fff; border-radius: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.15); z-index: 500; min-width: 235px; overflow: hidden; border-top: 3px solid var(--rojo); }
+  .nav-menu { display: none; position: absolute; top: 60px; right: 12px; background: #fff; border-radius: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.15); z-index: 500; min-width: 235px; overflow: hidden; border-top: 3px solid var(--rojo); }
   .nav-menu.open { display: block; }
   .nav-item { display: flex; align-items: center; gap: 12px; padding: 14px 18px; text-decoration: none; color: #222; font-size: 14px; font-weight: 600; border-bottom: 1px solid #f0f0f0; transition: background 0.15s; width: 100%; text-align: left; background: none; border-left: none; border-right: none; border-top: none; cursor: pointer; font-family: inherit; }
   .nav-item:last-child { border-bottom: none; }
